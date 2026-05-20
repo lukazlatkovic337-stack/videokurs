@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run db:setup",
     "build": "next build",
     "start": "next start",
     "db:setup": "npx prisma generate && npx prisma db push && node prisma/seed.js",
