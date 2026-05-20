@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./videokurs.db"
+}
+
+model User {
+  id           Int            @id @default(autoincrement())
+  email        String         @unique
+  passwordHash String
+  name         String
+  role         String         @default("student")
+  createdAt    DateTime       @default(now())
+  progress     UserProgress[]
+}
+
+model Course {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  thumbnail   String?
+  category    String?
+  level       String   @default("beginner")
+  orderIndex  Int      @default(0)
+  createdAt   DateTime @default(now())
+  videos      Video[]
+}
+
+model Video {
+  id          Int            @id @default(autoincrement())
+  courseId    Int
+  title       String
+  description String?
+  youtubeUrl  String?
+  duration    String?
+  orderIndex  Int            @default(0)
+  createdAt   DateTime       @default(now())
+  course      Course         @relation(fields: [courseId], references: [id])
+  progress    UserProgress[]
+}
+
+model UserProgress {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  videoId   Int
+  watched   Boolean   @default(false)
+  watchedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+  video     Video     @relation(fields: [videoId], references: [id])
+
+  @@unique([userId, videoId])
+}
