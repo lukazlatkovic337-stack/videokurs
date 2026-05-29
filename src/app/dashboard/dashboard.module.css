@@ -179,8 +179,6 @@
   flex-wrap: wrap;
 }
 
-.heroText {}
-
 .heroTitle {
   font-family: var(--font-body);
   font-weight: 800;
@@ -322,6 +320,112 @@
   animation: shimmer 1.5s ease-in-out infinite;
 }
 @keyframes shimmer { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+/* ===== EMPTY / NO RESULTS ===== */
+.emptyMsg {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  padding: 20px 18px;
+  text-align: center;
+}
+
+/* ===== SUBJECT SECTIONS ===== */
+.subjectList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.subjectSection {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.subjectSectionOpen {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.09);
+}
+
+.subjectHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 20px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  min-height: 82px;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.subjectHeader:active { background: rgba(0,0,0,0.015); }
+
+.subjectIconWrap {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.subjectIcon {
+  font-size: 1.65rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.subjectInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.subjectInfoTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subjectTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.subjectCountPill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.subjectContent {
+  border-top: 1.5px solid var(--border);
+  background: var(--bg2);
+  padding: 10px;
+}
+
 
 /* ===== COURSE LIST ===== */
 .courseList {
@@ -485,6 +589,16 @@
 .videoRow:last-child { border-bottom: none; }
 .videoRowDone .videoRowTitle { color: var(--text-muted); }
 
+.lessonTag {
+  display: block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 1px;
+}
+
 .videoRowPlay {
   display: flex;
   align-items: center;
@@ -633,8 +747,6 @@
     gap: 30px; /* Povećaj razmak */
   }
 }
-
-.playerLeft {}
 
 .backBtn {
   display: inline-flex;

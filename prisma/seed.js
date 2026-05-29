@@ -6,21 +6,11 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  const userCount = await prisma.user.count();
-  if (userCount > 0) {
-    console.log('✅ Database already seeded, skipping.');
-    return;
-  }
-  // Obriši sve postojeće podatke pre seeding-a
-  console.log('🗑️ Deleting existing data...');
+  await prisma.userProgress.deleteMany();
   await prisma.video.deleteMany();
   await prisma.course.deleteMany();
   await prisma.user.deleteMany();
-  await prisma.progress.deleteMany(); // Obriši i progres korisnika
-  console.log('✅ Existing data deleted.');
 
-  // Sada kreiraj nove podatke
-  console.log('Creating users...');
   const adminHash = bcrypt.hashSync('admin123', 10);
   const studentHash = bcrypt.hashSync('student123', 10);
 
@@ -29,16 +19,63 @@ async function main() {
       { email: 'admin@naucikurs.com', passwordHash: adminHash, name: 'Administrator', role: 'admin' },
       { email: 'student@naucimatematiku.rs', passwordHash: studentHash, name: 'Marko Petrović', role: 'student' },
     ],
-    skipDuplicates: true, // Dodato za slučaj da se pokuša kreirati isti korisnik više puta
   });
 
   const coursesData = [
+    // ───────────────────────────── SRPSKI JEZIK ─────────────────────────────
+    {
+      title: 'Gramatika srpskog jezika',
+      description: 'Naučite osnove srpske gramatike — vrste reči, rečenični članovi i morfologija. Temeljni kurs za sve koji žele sigurno vladanje jezičkim pravilima.',
+      category: 'Gramatika',
+      level: 'beginner',
+      thumbnail: 'gram',
+      subject: 'srpski',
+      orderIndex: 1,
+      videos: [
+        { title: 'Vrste reči', description: 'Imenice, glagoli, pridevi i ostale vrste reči', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '12:30', orderIndex: 1 },
+        { title: 'Rečenični članovi', description: 'Subjekat, predikat, objekat i dodaci', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '15:45', orderIndex: 2 },
+        { title: 'Morfologija reči', description: 'Promena imenica, prideva i glagola', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '18:20', orderIndex: 3 },
+        { title: 'Sintaksa rečenice', description: 'Prosta i složena rečenica', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '14:10', orderIndex: 4 },
+      ],
+    },
+    {
+      title: 'Pravopis i interpunkcija',
+      description: 'Pravila pisanja, upotreba interpunkcijskih znakova i učestale pravopisne greške koje treba izbegavati.',
+      category: 'Pravopis',
+      level: 'beginner',
+      thumbnail: 'prp',
+      subject: 'srpski',
+      orderIndex: 2,
+      videos: [
+        { title: 'Osnovi pravopisa', description: 'Velika slova, spojeno i rastavljeno pisanje', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '11:00', orderIndex: 1 },
+        { title: 'Interpunkcija', description: 'Tačka, zarez, tačka-zarez i ostali znaci', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '13:40', orderIndex: 2 },
+        { title: 'Česte greške', description: 'Najčešće pravopisne greške i kako ih izbeći', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '16:15', orderIndex: 3 },
+      ],
+    },
+    {
+      title: 'Književnost i analiza teksta',
+      description: 'Analiza književnih dela, stilske figure i interpretacija tekstova — sve što je potrebno za pismeni i usmeni deo ispita.',
+      category: 'Književnost',
+      level: 'intermediate',
+      thumbnail: 'knj',
+      subject: 'srpski',
+      orderIndex: 3,
+      videos: [
+        { title: 'Stilske figure', description: 'Metafora, poređenje, personifikacija i ostalo', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '17:30', orderIndex: 1 },
+        { title: 'Analiza pesme', description: 'Kako analizirati lirsku pesmu korak po korak', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '20:00', orderIndex: 2 },
+        { title: 'Analiza proze', description: 'Tema, motiv, likovi i poruka dela', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '22:15', orderIndex: 3 },
+        { title: 'Pisanje eseja', description: 'Struktura i pisanje interpretativnog eseja', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '19:45', orderIndex: 4 },
+      ],
+    },
+
+    // ───────────────────────────── MATEMATIKA ─────────────────────────────
     {
       title: 'Trigonometrija',
       description: 'Savladajte sinuse, kosinuse i tangense. Od jediničnog kružnog luka do primena u geometriji i fizici.',
       category: 'Trigonometrija',
       level: 'intermediate',
       thumbnail: 'trig',
+      subject: 'matematika',
       orderIndex: 1,
       videos: [
         { title: 'Uvod u trigonometriju', description: 'Šta je trigonometrija i gde se koristi', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '14:22', orderIndex: 1 },
@@ -54,6 +91,7 @@ async function main() {
       category: 'Razlomci',
       level: 'beginner',
       thumbnail: 'razl',
+      subject: 'matematika',
       orderIndex: 2,
       videos: [
         { title: 'Šta su razlomci?', description: 'Pojam razlomka, brojnik i imenilac', youtubeUrl: 'https://www.youtube.com/embed/n0FZhQ_GkKw', duration: '10:15', orderIndex: 1 },
@@ -68,6 +106,7 @@ async function main() {
       category: 'Funkcije',
       level: 'intermediate',
       thumbnail: 'funk',
+      subject: 'matematika',
       orderIndex: 3,
       videos: [
         { title: 'Pojam funkcije', description: 'Definicija, domen i kodomen', youtubeUrl: 'https://www.youtube.com/embed/kvGsIo1TmsM', duration: '13:28', orderIndex: 1 },
@@ -83,6 +122,7 @@ async function main() {
       category: 'Algebra',
       level: 'beginner',
       thumbnail: 'alg',
+      subject: 'matematika',
       orderIndex: 4,
       videos: [
         { title: 'Linearne jednačine', description: 'Rešavanje jednačina prvog stepena', youtubeUrl: 'https://www.youtube.com/embed/NybHckSEQBI', duration: '11:30', orderIndex: 1 },
@@ -97,6 +137,7 @@ async function main() {
       category: 'Geometrija',
       level: 'beginner',
       thumbnail: 'geo',
+      subject: 'matematika',
       orderIndex: 5,
       videos: [
         { title: 'Osnovi geometrije', description: 'Tačka, prava, ravan i ugao', youtubeUrl: 'https://www.youtube.com/embed/302eJ3TzJQU', duration: '12:10', orderIndex: 1 },
@@ -112,6 +153,7 @@ async function main() {
       category: 'Statistika',
       level: 'intermediate',
       thumbnail: 'stat',
+      subject: 'matematika',
       orderIndex: 6,
       videos: [
         { title: 'Aritmetička sredina i medijana', description: 'Mere centralne tendencije', youtubeUrl: 'https://www.youtube.com/embed/uhxtUt_-GyM', duration: '13:00', orderIndex: 1 },
@@ -126,6 +168,7 @@ async function main() {
       category: 'Nizovi',
       level: 'advanced',
       thumbnail: 'niz',
+      subject: 'matematika',
       orderIndex: 7,
       videos: [
         { title: 'Aritmetički niz', description: 'Definicija, opšti član i suma', youtubeUrl: 'https://www.youtube.com/embed/XzfPajgRons', duration: '15:22', orderIndex: 1 },
@@ -140,6 +183,7 @@ async function main() {
       category: 'Analiza',
       level: 'advanced',
       thumbnail: 'anal',
+      subject: 'matematika',
       orderIndex: 8,
       videos: [
         { title: 'Pojam izvoda', description: 'Nagib tangente i brzina promene', youtubeUrl: 'https://www.youtube.com/embed/WsQQvHm4lSw', duration: '16:00', orderIndex: 1 },
@@ -147,6 +191,38 @@ async function main() {
         { title: 'Izvodi trigonometrijskih funkcija', description: 'sin, cos, tg i primene', youtubeUrl: 'https://www.youtube.com/embed/WsQQvHm4lSw', duration: '18:30', orderIndex: 3 },
         { title: 'Ekstremne vrednosti funkcije', description: 'Minimum, maksimum i tačke pregiba', youtubeUrl: 'https://www.youtube.com/embed/WsQQvHm4lSw', duration: '24:10', orderIndex: 4 },
         { title: 'Primene izvoda', description: 'Optimizacija i fizičke primene', youtubeUrl: 'https://www.youtube.com/embed/WsQQvHm4lSw', duration: '26:45', orderIndex: 5 },
+      ],
+    },
+
+    // ───────────────────────────── KOMBINOVANI TEST ─────────────────────────────
+    {
+      title: 'Kombinovani test — Matematika',
+      description: 'Vežbanje rešavanja kombinovanih testova iz matematike u formatima završnog ispita. Kompletni setovi zadataka sa detaljnim objašnjenjima.',
+      category: 'Test',
+      level: 'intermediate',
+      thumbnail: 'komb',
+      subject: 'kombinovani',
+      orderIndex: 1,
+      videos: [
+        { title: 'Format završnog ispita', description: 'Struktura testa, bodovanje i vremenski plan', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '10:00', orderIndex: 1 },
+        { title: 'Rešavamo test — set 1', description: 'Kompletno rešavanje jednog kombinovanog testa', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '35:20', orderIndex: 2 },
+        { title: 'Rešavamo test — set 2', description: 'Drugi set zadataka sa objašnjenjima', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '32:45', orderIndex: 3 },
+        { title: 'Najčešće greške', description: 'Analiza grešaka i saveti za bolji rezultat', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '18:10', orderIndex: 4 },
+      ],
+    },
+    {
+      title: 'Kombinovani test — Srpski jezik',
+      description: 'Vežbanje rešavanja kombinovanih testova iz srpskog jezika. Čitanje sa razumevanjem, gramatika i pisanje eseja.',
+      category: 'Test',
+      level: 'intermediate',
+      thumbnail: 'komb2',
+      subject: 'kombinovani',
+      orderIndex: 2,
+      videos: [
+        { title: 'Format testa iz srpskog', description: 'Kako izgleda test iz srpskog na završnom ispitu', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '9:30', orderIndex: 1 },
+        { title: 'Čitanje i razumevanje — set 1', description: 'Vežbe čitanja sa razumevanjem teksta', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '28:10', orderIndex: 2 },
+        { title: 'Gramatički zadaci — set 1', description: 'Vežbanje gramatičkih zadataka iz testa', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '22:30', orderIndex: 3 },
+        { title: 'Pisanje eseja — set 1', description: 'Vežbanje pisanja eseja u vremenskom ograničenju', youtubeUrl: 'https://www.youtube.com/embed/PUB0TaZ7bhA', duration: '25:40', orderIndex: 4 },
       ],
     },
   ];
@@ -161,11 +237,11 @@ async function main() {
     });
   }
 
-  console.log('✅ Database seeded successfully!');
+  console.log('✅ Baza uspešno popunjena!');
   console.log('');
   console.log('Demo nalozi:');
-  console.log('  admin@naucikurs.com   / admin123');
-  console.log('  student@naucimatematiku.rs / student123');
+  console.log('  admin@naucikurs.com          / admin123');
+  console.log('  student@naucimatematiku.rs   / student123');
 }
 
 main()

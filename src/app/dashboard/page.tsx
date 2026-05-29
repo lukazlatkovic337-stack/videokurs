@@ -23,10 +23,12 @@ interface Course {
   category: string;
   level: string;
   thumbnail: string;
+  subject: string;
   video_count: number;
 }
 
 const CAT_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
+  // Matematika
   trig:  { bg: '#f5f3ff', text: '#7c3aed', icon: '∿' },
   razl:  { bg: '#f0f9ff', text: '#0ea5e9', icon: '½' },
   funk:  { bg: '#f0fdf4', text: '#16a34a', icon: 'ƒ' },
@@ -35,7 +37,20 @@ const CAT_COLORS: Record<string, { bg: string; text: string; icon: string }> = {
   stat:  { bg: '#eff6ff', text: '#2563eb', icon: 'σ' },
   niz:   { bg: '#fffbeb', text: '#d97706', icon: '∑' },
   anal:  { bg: '#fdf4ff', text: '#c026d3', icon: '∫' },
+  // Srpski jezik
+  gram:  { bg: '#fff1f2', text: '#be123c', icon: 'Г' },
+  prp:   { bg: '#fce7f3', text: '#9d174d', icon: 'П' },
+  knj:   { bg: '#fefce8', text: '#92400e', icon: 'К' },
+  // Kombinovani test
+  komb:  { bg: '#ecfdf5', text: '#065f46', icon: '⊕' },
+  komb2: { bg: '#f0fdf4', text: '#166534', icon: '≡' },
 };
+
+const SUBJECTS = [
+  { key: 'srpski',      label: 'Srpski jezik',     icon: 'С', bg: '#fff1f2', text: '#be123c' },
+  { key: 'matematika',  label: 'Matematika',        icon: '∑', bg: '#eff6ff', text: '#1d4ed8' },
+  { key: 'kombinovani', label: 'Kombinovani test',  icon: '⊕', bg: '#ecfdf5', text: '#065f46' },
+];
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -43,7 +58,7 @@ export default function DashboardPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<number>>(new Set());
-  const [expandedCourse, setExpandedCourse] = useState<number | null>(null);
+  const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -71,7 +86,6 @@ export default function DashboardPage() {
     e.stopPropagation();
     const isWatched = watchedIds.has(videoId);
     setTogglingId(videoId);
-    // Optimistic update
     setWatchedIds(prev => {
       const next = new Set(prev);
       isWatched ? next.delete(videoId) : next.add(videoId);
@@ -93,12 +107,25 @@ export default function DashboardPage() {
     return Math.round((cvids.filter(v => watchedIds.has(v.id)).length / cvids.length) * 100);
   };
 
+  const getSubjectStats = (subjectKey: string) => {
+    const subjectCourses = courses.filter(c => c.subject === subjectKey);
+    const allVids = subjectCourses.flatMap(c => getCourseVideos(c.id));
+    const watched = allVids.filter(v => watchedIds.has(v.id)).length;
+    const total = allVids.length;
+    return {
+      courseCount: subjectCourses.length,
+      total,
+      watched,
+      progress: total > 0 ? Math.round((watched / total) * 100) : 0,
+    };
+  };
+
   const totalWatched = watchedIds.size;
   const totalVideos = videos.length;
 
-  const filteredCourses = courses.filter(c =>
-    c.title.toLowerCase().includes(search.toLowerCase()) ||
-    c.category.toLowerCase().includes(search.toLowerCase())
+  const filteredVideos = videos.filter(v =>
+    v.title.toLowerCase().includes(search.toLowerCase()) ||
+    v.description.toLowerCase().includes(search.toLowerCase())
   );
 
   if (status === 'loading') return <div className={styles.loading}><span className={styles.spinner} /></div>;
@@ -106,9 +133,17 @@ export default function DashboardPage() {
   // Video player view
   if (selectedVideo) {
     const course = courses.find(c => c.id === selectedVideo.course_id);
-    const courseVideos = getCourseVideos(selectedVideo.course_id);
+    const subjectMeta = SUBJECTS.find(s => s.key === course?.subject);
+    const subjectCourses = courses.filter(c => c.subject === course?.subject);
+    const subjectVideos = subjectCourses.flatMap(c => getCourseVideos(c.id));
+    const subjectWatched = subjectVideos.filter(v => watchedIds.has(v.id)).length;
+    const subjectProgress = subjectVideos.length > 0
+      ? Math.round((subjectWatched / subjectVideos.length) * 100)
+      : 0;
     const isWatched = watchedIds.has(selectedVideo.id);
-    const colors = CAT_COLORS[course?.thumbnail || ''] || CAT_COLORS['alg'];
+    const colors = subjectMeta
+      ? { bg: subjectMeta.bg, text: subjectMeta.text, icon: subjectMeta.icon }
+      : CAT_COLORS[course?.thumbnail || ''] || CAT_COLORS['alg'];
 
     return (
       <div className={styles.page}>
@@ -117,7 +152,7 @@ export default function DashboardPage() {
             <NavBrand />
             <NavRight session={session} />
           </nav>
-          <div className={`${styles.content} ${selectedVideo ? styles.contentPlayerView : ''}`}>
+          <div className={`${styles.content} ${styles.contentPlayerView}`}>
             <div className={styles.playerLayout}>
               {/* Left: video */}
               <div className={styles.playerLeft}>
@@ -173,9 +208,9 @@ export default function DashboardPage() {
                 <div className={styles.playlistHeader} style={{ background: colors.bg }}>
                   <span className={styles.playlistIcon} style={{ color: colors.text }}>{colors.icon}</span>
                   <div>
-                    <p className={styles.playlistTitle}>{course?.title}</p>
+                    <p className={styles.playlistTitle}>{subjectMeta?.label ?? course?.title}</p>
                     <p className={styles.playlistMeta}>
-                      {courseVideos.filter(v => watchedIds.has(v.id)).length}/{courseVideos.length} odgledano
+                      {subjectWatched}/{subjectVideos.length} odgledano
                     </p>
                   </div>
                 </div>
@@ -183,13 +218,13 @@ export default function DashboardPage() {
                   <div className={styles.playlistProgressBar}>
                     <div
                       className={styles.playlistProgressFill}
-                      style={{ width: `${getCourseProgress(selectedVideo.course_id)}%` }}
+                      style={{ width: `${subjectProgress}%` }}
                     />
                   </div>
-                  <span>{getCourseProgress(selectedVideo.course_id)}%</span>
+                  <span>{subjectProgress}%</span>
                 </div>
                 <div className={styles.playlist}>
-                  {courseVideos.map((v, idx) => {
+                  {subjectVideos.map((v, idx) => {
                     const active = v.id === selectedVideo.id;
                     const done = watchedIds.has(v.id);
                     return (
@@ -251,13 +286,9 @@ export default function DashboardPage() {
               <h1 className={styles.heroTitle}>
                 Zdravo, <em>{session?.user?.name?.split(' ')[0]}</em>
               </h1>
-              <p className={styles.heroSub}>Nastavi učenje matematike — svaki zadatak te približava cilju.</p>
+              <p className={styles.heroSub}>Nastavi učenje — svaki zadatak te približava cilju.</p>
             </div>
             <div className={styles.heroStats}>
-              <div className={styles.statCard}>
-                <span className={styles.statNum}>{courses.length}</span>
-                <span className={styles.statLabel}>Oblasti</span>
-              </div>
               <div className={styles.statCard}>
                 <span className={styles.statNum}>{totalVideos}</span>
                 <span className={styles.statLabel}>Lekcija</span>
@@ -286,9 +317,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Search */}
+          {/* Controls */}
           <div className={styles.controls}>
-            <h2 className={styles.sectionLabel}>Sve oblasti</h2>
+            <h2 className={styles.sectionLabel}>Oblasti</h2>
             <div className={styles.searchWrap}>
               <svg className={styles.searchIcon} width="14" height="14" viewBox="0 0 16 16" fill="none">
                 <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.5"/>
@@ -296,64 +327,77 @@ export default function DashboardPage() {
               </svg>
               <input
                 className={styles.search}
-                placeholder="Pretraži oblasti..."
+                placeholder="Pretraži kurseve..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Course list */}
+          {/* Content */}
           {loadingCourses ? (
             <div className={styles.skeletonList}>
-              {[1,2,3,4,5].map(i => <div key={i} className={styles.skeletonRow} />)}
+              {[1,2,3].map(i => <div key={i} className={styles.skeletonRow} style={{ height: '80px' }} />)}
+            </div>
+          ) : search ? (
+            // ── Flat search results ──
+            <div>
+              {filteredVideos.length === 0 ? (
+                <p className={styles.emptyMsg}>Nema rezultata za &ldquo;{search}&rdquo;</p>
+              ) : (
+                <FlatVideoList
+                  videos={filteredVideos}
+                  watchedIds={watchedIds}
+                  togglingId={togglingId}
+                  onSelectVideo={setSelectedVideo}
+                  onToggleWatched={toggleWatched}
+                />
+              )}
             </div>
           ) : (
-            <div className={styles.courseList}>
-              {filteredCourses.map(course => {
-                const courseVids = getCourseVideos(course.id);
-                const progress = getCourseProgress(course.id);
-                const isOpen = expandedCourse === course.id;
-                const colors = CAT_COLORS[course.thumbnail] || CAT_COLORS['alg'];
-                const watchedCount = courseVids.filter(v => watchedIds.has(v.id)).length;
+            // ── Subject grouped view ──
+            <div className={styles.subjectList}>
+              {SUBJECTS.map(subject => {
+                const stats = getSubjectStats(subject.key);
+                const isOpen = expandedSubject === subject.key;
+                const subjectCourses = courses.filter(c => c.subject === subject.key);
 
                 return (
-                  <div key={course.id} className={`${styles.courseRow} ${isOpen ? styles.courseRowOpen : ''}`}>
-                    {/* Course header */}
+                  <div
+                    key={subject.key}
+                    className={`${styles.subjectSection} ${isOpen ? styles.subjectSectionOpen : ''}`}
+                  >
                     <button
-                      className={styles.courseHeader}
-                      onClick={() => setExpandedCourse(isOpen ? null : course.id)}
+                      className={styles.subjectHeader}
+                      onClick={() => setExpandedSubject(isOpen ? null : subject.key)}
                     >
-                      <div className={styles.courseIconWrap} style={{ background: colors.bg }}>
-                        <span className={styles.courseIcon} style={{ color: colors.text }}>{colors.icon}</span>
+                      <div className={styles.subjectIconWrap} style={{ background: subject.bg }}>
+                        <span className={styles.subjectIcon} style={{ color: subject.text }}>{subject.icon}</span>
                       </div>
 
-                      <div className={styles.courseInfo}>
-                        <div className={styles.courseInfoTop}>
-                          <div>
-                            <span className={styles.courseCategory}>{course.category}</span>
-                            <h3 className={styles.courseTitle}>{course.title}</h3>
-                          </div>
-                          <div className={styles.courseMeta}>
-                            <span className={styles.courseCountPill}>
-                              <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                                <rect x="1" y="2" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/>
-                                <path d="M5.5 5l4 2-4 2V5z" fill="currentColor"/>
-                              </svg>
-                              {watchedCount}/{course.video_count}
-                            </span>
-                          </div>
+                      <div className={styles.subjectInfo}>
+                        <div className={styles.subjectInfoTop}>
+                          <h2 className={styles.subjectTitle}>{subject.label}</h2>
+                          <span className={styles.subjectCountPill}>
+                            <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+                              <rect x="1" y="2" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.2"/>
+                              <path d="M5.5 5l4 2-4 2V5z" fill="currentColor"/>
+                            </svg>
+                            {stats.total} lekcija
+                          </span>
                         </div>
-
                         <div className={styles.progressRow}>
                           <div className={styles.progressBar}>
                             <div
                               className={styles.progressFill}
-                              style={{ width: `${progress}%`, background: colors.text }}
+                              style={{ width: `${stats.progress}%`, background: subject.text }}
                             />
                           </div>
-                          <span className={styles.progressPct} style={{ color: progress === 100 ? 'var(--green)' : 'var(--text-muted)' }}>
-                            {progress}%
+                          <span
+                            className={styles.progressPct}
+                            style={{ color: stats.progress === 100 ? 'var(--green)' : 'var(--text-muted)' }}
+                          >
+                            {stats.progress}%
                           </span>
                         </div>
                       </div>
@@ -365,77 +409,22 @@ export default function DashboardPage() {
                       </div>
                     </button>
 
-                    {/* Video list (expanded) */}
                     {isOpen && (
-                      <div className={styles.videoAccordion}>
-                        <p className={styles.courseDesc}>{course.description}</p>
-                        <div className={styles.videoRows}>
-                          {courseVids.map((v, idx) => {
-                            const done = watchedIds.has(v.id);
-                            return (
-                              <div key={v.id} className={`${styles.videoRow} ${done ? styles.videoRowDone : ''}`}>
-                                <button
-                                  className={styles.videoRowPlay}
-                                  onClick={() => setSelectedVideo(v)}
-                                >
-                                  <div className={styles.videoRowNum}>
-                                    {done ? (
-                                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                        <circle cx="7" cy="7" r="6" fill="var(--green)" opacity="0.15" stroke="var(--green)" strokeWidth="1.3"/>
-                                        <path d="M4.5 7l2 2 3-3" stroke="var(--green)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-                                      </svg>
-                                    ) : (
-                                      <span>{idx + 1}</span>
-                                    )}
-                                  </div>
-                                  <div className={styles.videoRowInfo}>
-                                    <span className={styles.videoRowTitle}>{v.title}</span>
-                                    <span className={styles.videoRowDesc}>{v.description}</span>
-                                  </div>
-                                  <div className={styles.videoRowRight}>
-                                    <span className={styles.videoRowDur}>
-                                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                                        <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
-                                        <path d="M6 3.5V6l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                                      </svg>
-                                      {v.duration}
-                                    </span>
-                                    <span className={styles.videoRowPlayIcon}>
-                                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                        <path d="M3 2.5l8 4.5-8 4.5V2.5z" fill="currentColor"/>
-                                      </svg>
-                                    </span>
-                                  </div>
-                                </button>
-
-                                <button
-                                  className={`${styles.checkBtn} ${done ? styles.checkBtnDone : ''}`}
-                                  onClick={(e) => toggleWatched(v.id, e)}
-                                  disabled={togglingId === v.id}
-                                  title={done ? 'Označi kao neodgledano' : 'Označi kao odgledano'}
-                                >
-                                  {togglingId === v.id ? (
-                                    <span className={styles.miniSpinner} />
-                                  ) : done ? (
-                                    <>
-                                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                                        <path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                      </svg>
-                                      Odgledano
-                                    </>
-                                  ) : (
-                                    <>
-                                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                                        <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3"/>
-                                      </svg>
-                                      Nije odgledano
-                                    </>
-                                  )}
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
+                      <div className={styles.subjectContent}>
+                        {(() => {
+                          const subjectVideos = subjectCourses.flatMap(c => getCourseVideos(c.id));
+                          return subjectVideos.length === 0 ? (
+                            <p className={styles.emptyMsg}>Nema lekcija u ovoj oblasti.</p>
+                          ) : (
+                            <FlatVideoList
+                              videos={subjectVideos}
+                              watchedIds={watchedIds}
+                              togglingId={togglingId}
+                              onSelectVideo={setSelectedVideo}
+                              onToggleWatched={toggleWatched}
+                            />
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -446,25 +435,105 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className={styles.footer}>
         <p className={styles.footerText}>2026 &copy; Nauči Matematiku</p>
         <p className={styles.footerSubText}>Powered by L.Z. Design</p>
       </footer>
-
     </div>
   );
 }
+
+// ─── Flat Video List Component ───────────────────────────────────────────────
+
+interface FlatVideoListProps {
+  videos: Video[];
+  watchedIds: Set<number>;
+  togglingId: number | null;
+  onSelectVideo: (v: Video) => void;
+  onToggleWatched: (id: number, e: React.MouseEvent) => void;
+}
+
+function FlatVideoList({ videos, watchedIds, togglingId, onSelectVideo, onToggleWatched }: FlatVideoListProps) {
+  return (
+    <div className={styles.videoRows}>
+      {videos.map((v, idx) => {
+        const done = watchedIds.has(v.id);
+        return (
+          <div key={v.id} className={`${styles.videoRow} ${done ? styles.videoRowDone : ''}`}>
+            <button className={styles.videoRowPlay} onClick={() => onSelectVideo(v)}>
+              <div className={styles.videoRowNum}>
+                {done ? (
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="6" fill="var(--green)" opacity="0.15" stroke="var(--green)" strokeWidth="1.3"/>
+                    <path d="M4.5 7l2 2 3-3" stroke="var(--green)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <span>{idx + 1}</span>
+                )}
+              </div>
+              <div className={styles.videoRowInfo}>
+                <span className={styles.lessonTag}>Lekcija {idx + 1}</span>
+                <span className={styles.videoRowTitle}>{v.title}</span>
+                <span className={styles.videoRowDesc}>{v.description}</span>
+              </div>
+              <div className={styles.videoRowRight}>
+                <span className={styles.videoRowDur}>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
+                    <path d="M6 3.5V6l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                  </svg>
+                  {v.duration}
+                </span>
+                <span className={styles.videoRowPlayIcon}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 2.5l8 4.5-8 4.5V2.5z" fill="currentColor"/>
+                  </svg>
+                </span>
+              </div>
+            </button>
+
+            <button
+              className={`${styles.checkBtn} ${done ? styles.checkBtnDone : ''}`}
+              onClick={(e) => onToggleWatched(v.id, e)}
+              disabled={togglingId === v.id}
+              title={done ? 'Označi kao neodgledano' : 'Označi kao odgledano'}
+            >
+              {togglingId === v.id ? (
+                <span className={styles.miniSpinner} />
+              ) : done ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <path d="M2.5 7l3 3 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Odgledano
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.3"/>
+                  </svg>
+                  Nije odgledano
+                </>
+              )}
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Nav Components ─────────────────────────────────────────────────────────
 
 function NavBrand() {
   return (
     <div className={styles.navBrand}>
       <div className={styles.logo}>
-        <Image 
-          src="/images/logo.png" 
-          alt="Logo" 
-          width={36} 
-          height={36} 
+        <Image
+          src="/images/logo.png"
+          alt="Logo"
+          width={36}
+          height={36}
           priority
         />
       </div>

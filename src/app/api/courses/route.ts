@@ -11,7 +11,7 @@ export async function GET() {
     include: {
       _count: { select: { videos: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { orderIndex: 'asc' },
   });
 
   const result = courses.map(c => ({
@@ -21,6 +21,7 @@ export async function GET() {
     thumbnail: c.thumbnail,
     category: c.category,
     level: c.level,
+    subject: c.subject,
     video_count: c._count.videos,
   }));
 

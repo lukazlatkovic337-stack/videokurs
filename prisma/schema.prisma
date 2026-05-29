@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./videokurs.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -24,6 +24,7 @@ model Course {
   thumbnail   String?
   category    String?
   level       String   @default("beginner")
+  subject     String?  @default("matematika")
   orderIndex  Int      @default(0)
   createdAt   DateTime @default(now())
   videos      Video[]
